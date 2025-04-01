@@ -1,5 +1,5 @@
 # Use the correct JDK base image for building Java applications
-FROM eclipse-temurin:17-jdk-slim
+FROM eclipse-temurin:21-jdk-jammy
 
 # Copy the JAR file built by Maven into the container
 COPY target/XPS.jar /app/XPS.jar
