@@ -1,4 +1,5 @@
-FROM openjdk:17-jre-slim
+# Use Eclipse Temurin as the base image
+FROM eclipse-temurin:17-jre-slim
 
 # Copy the JAR file into the Docker image
 COPY target/XPS.jar /XPS.jar
