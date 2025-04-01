@@ -1,6 +1,10 @@
 pipeline {
     agent any
     
+    environment {
+        MAVEN_OPTS = "-Dmaven.repo.local=/home/minashehata/.m2/repository"
+    }
+
     stages {
         stage('Checkout') {
             steps {
@@ -11,8 +15,8 @@ pipeline {
         
         stage('Test') {
             steps {
-                // Run tests using Maven
-                sh 'mvn test'
+                // Run tests using Maven with the correct local repository
+                sh 'mvn test -Dmaven.repo.local=/home/minashehata/.m2/repository'
             }
             post {
                 failure {
@@ -24,8 +28,8 @@ pipeline {
         
         stage('Build JAR') {
             steps {
-                // Build the JAR file
-                sh 'mvn package -DskipTests'
+                // Build the JAR file with the correct local repository
+                sh 'mvn package -DskipTests -Dmaven.repo.local=/home/minashehata/.m2/repository'
             }
         }
         
@@ -61,3 +65,4 @@ pipeline {
         }
     }
 }
+
