@@ -176,7 +176,7 @@ public class XPerienceServer {
 
         // Return response based on result
         return result.success ? 
-            "Aksept#" + result.eventCount + "#" : 
+            "Accept#" + result.eventCount + "#" : 
             "Reject#";
     }
 
