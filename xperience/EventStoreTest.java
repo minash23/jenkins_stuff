@@ -9,205 +9,155 @@ package xperience;
 
 import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.Assertions.*;
-import java.io.*;
-import java.net.*;
 
 /**
- * JUnit 5 test for the XPerienceServer communication protocol.
- * Tests the server's responses to various event registration requests.
+ * JUnit 5 test for the EventStore interface and implementations.
+ * Uses EventStoreMemory as the implementation under test.
  */
 public class EventStoreTest {
     
-    private static final int PORT = 8085;
-    private static final String PASSWORD_FILE = "test_passwords.txt";
-    private static XPerienceServer server;
-    private static Thread serverThread;
+    private EventStore eventStore;
     
-    @BeforeAll
-    public static void setupServer() throws IOException {
-        // Create test password file
-        try (PrintWriter writer = new PrintWriter(PASSWORD_FILE)) {
-            writer.println("password1");
-            writer.println("password2");
-            writer.println("password3");
-            writer.println("password4");
-            writer.println("password5");
-            writer.println("password6");
-            writer.println("password7");
-        }
-        
-        // Start server in a separate thread
-        serverThread = new Thread(() -> {
-            try {
-                server = new XPerienceServer(PORT, PASSWORD_FILE);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
-        serverThread.setDaemon(true);
-        serverThread.start();
-        
-        // Give server time to start
-        try {
-            Thread.sleep(500);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+    @BeforeEach
+    public void setup() {
+        // Use EventStoreMemory implementation as specified in the assignment
+        eventStore = new EventStoreMemory();
     }
     
     @Test
-    public void testAddValidEvent() throws IOException {
-        String response = sendEventToServer(
+    public void testAddValidEvent() {
+        // Valid event with all fields properly formatted
+        EventStore.Result result = eventStore.addEvent(
             "Conference", 
             "2025-04-15", 
             "14:30", 
-            "Annual tech conference",
-            "password1"
+            "Annual tech conference"
         );
         
-        assertEquals("Accept#1#", response);
+        assertTrue(result.success);
+        assertEquals(1, result.eventCount);
     }
     
     @Test
-    public void testAddMultipleEvents() throws IOException {
-        // Add second event (first was added in previous test)
-        String response = sendEventToServer(
+    public void testAddMultipleEvents() {
+        // Add first event
+        EventStore.Result result1 = eventStore.addEvent(
+            "Conference", 
+            "2025-04-15", 
+            "14:30", 
+            "Annual tech conference"
+        );
+        
+        assertTrue(result1.success);
+        assertEquals(1, result1.eventCount);
+        
+        // Add second event
+        EventStore.Result result2 = eventStore.addEvent(
             "Workshop", 
             "2025-04-16", 
             "10:00", 
-            "Coding workshop",
-            "password2"
+            "Coding workshop"
         );
         
-        assertEquals("Accept#2#", response);
+        assertTrue(result2.success);
+        assertEquals(2, result2.eventCount);
     }
     
     @Test
-    public void testAddDuplicateEvent() throws IOException {
+    public void testAddDuplicateEvent() {
+        // Add first event
+        EventStore.Result result1 = eventStore.addEvent(
+            "Conference", 
+            "2025-04-15", 
+            "14:30", 
+            "Annual tech conference"
+        );
+        
+        assertTrue(result1.success);
+        
         // Try to add duplicate event (same name)
-        String response = sendEventToServer(
+        EventStore.Result result2 = eventStore.addEvent(
             "Conference", 
             "2025-05-20", 
             "09:00", 
-            "Different description",
-            "password3"
+            "Different description"
         );
         
-        assertEquals("Reject#", response);
+        assertFalse(result2.success);
+        assertEquals(1, result2.eventCount);
     }
     
     @Test
-    public void testInvalidName() throws IOException {
+    public void testInvalidName() {
         // Empty name
-        String response = sendEventToServer(
+        EventStore.Result result = eventStore.addEvent(
             "", 
             "2025-04-15", 
             "14:30", 
-            "Annual tech conference",
-            "password4"
+            "Annual tech conference"
         );
         
-        assertEquals("Reject#", response);
+        assertFalse(result.success);
+        assertEquals(0, result.eventCount);
     }
     
     @Test
-    public void testInvalidDate() throws IOException {
+    public void testInvalidDate() {
         // Invalid date format
-        String response = sendEventToServer(
-            "Conference2", 
+        EventStore.Result result = eventStore.addEvent(
+            "Conference", 
             "15/04/2025", // Not ISO format
             "14:30", 
-            "Annual tech conference",
-            "password5"
+            "Annual tech conference"
         );
         
-        assertEquals("Reject#", response);
+        assertFalse(result.success);
+        assertEquals(0, result.eventCount);
     }
     
     @Test
-    public void testInvalidTime() throws IOException {
+    public void testInvalidTime() {
         // Invalid time format
-        String response = sendEventToServer(
-            "Conference3", 
+        EventStore.Result result = eventStore.addEvent(
+            "Conference", 
             "2025-04-15", 
             "2:30 PM", // Not 24-hour format
-            "Annual tech conference",
-            "password6"
+            "Annual tech conference"
         );
         
-        assertEquals("Reject#", response);
+        assertFalse(result.success);
+        assertEquals(0, result.eventCount);
     }
     
     @Test
-    public void testEmptyDescription() throws IOException {
+    public void testEmptyDescription() {
         // Empty description
-        String response = sendEventToServer(
-            "Conference4", 
+        EventStore.Result result = eventStore.addEvent(
+            "Conference", 
             "2025-04-15", 
             "14:30", 
-            "",
-            "password7"
+            ""
         );
         
-        assertEquals("Reject#", response);
+        assertFalse(result.success);
+        assertEquals(0, result.eventCount);
     }
     
     @Test
-    public void testInvalidPassword() throws IOException {
-        // Invalid password
-        String response = sendEventToServer(
-            "Conference5", 
-            "2025-04-15", 
-            "14:30", 
-            "Annual tech conference",
-            "invalid-password"
-        );
+    public void testValidator() {
+        // Test the validator directly for coverage
         
-        assertEquals("Reject#", response);
-    }
-    
-    @Test
-    public void testMissingFields() throws IOException {
-        // Connect to server
-        try (Socket socket = new Socket("localhost", PORT)) {
-            // Send incomplete request
-            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-            out.print("IncompleteEvent#2025-04-15#14:30#");
-            out.flush();
-            
-            // Read response
-            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            String response = in.readLine();
-            
-            assertEquals("Reject#", response);
-        }
-    }
-    
-    /**
-     * Helper method to send an event to the server and get the response
-     */
-    private String sendEventToServer(String name, String date, String time, String description, String password) 
-            throws IOException {
-        // Connect to server
-        try (Socket socket = new Socket("localhost", PORT)) {
-            // Send event
-            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-            String request = name + "#" + date + "#" + time + "#" + description + "#" + password;
-            out.print(request);
-            out.flush();
-            
-            // Read response
-            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            return in.readLine();
-        }
-    }
-    
-    @AfterAll
-    public static void cleanup() {
-        // Delete test password file
-        File passwordFile = new File(PASSWORD_FILE);
-        if (passwordFile.exists()) {
-            passwordFile.delete();
-        }
+        // Valid inputs
+        assertTrue(EventStore.EventValidator.validateName("Conference"));
+        assertTrue(EventStore.EventValidator.validateDate("2025-04-15"));
+        assertTrue(EventStore.EventValidator.validateTime("14:30"));
+        assertTrue(EventStore.EventValidator.validateDescription("Description"));
+        
+        // Invalid inputs
+        assertFalse(EventStore.EventValidator.validateDate("2025/04/15"));
+        assertFalse(EventStore.EventValidator.validateTime("2:30 PM"));
+        assertFalse(EventStore.EventValidator.validateName(null));
+        assertFalse(EventStore.EventValidator.validateDescription(null));
     }
 }
+
