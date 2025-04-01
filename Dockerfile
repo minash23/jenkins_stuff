@@ -1,4 +1,4 @@
-FROM openjdk:21-jre-slim
+FROM openjdk:17-jre-slim
 
 # Copy the JAR file into the Docker image
 COPY target/XPS.jar /XPS.jar
