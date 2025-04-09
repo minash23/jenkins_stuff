@@ -72,7 +72,7 @@ pipeline {
     
     post {
         success {
-            echo 'Both memory and DB containers deployed successfully!'
+            echo 'Both memory and DB containers are deployed successfully!'
         }
         failure {
             echo 'Pipeline execution failed!'
