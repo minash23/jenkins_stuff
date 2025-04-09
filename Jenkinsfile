@@ -60,10 +60,10 @@ pipeline {
                 stage('Deploy DB Container') {
                     steps {
                         sh '''
-                            docker stop xperience-db || true
-                            docker rm xperience-db || true
-                            docker run -d -p 9000:9000 --name xperience-db xperience-server-db:latest
-                        '''
+            docker stop xperience-db || true
+            docker rm xperience-db || true
+            docker run -d -p 9000:9000 -e DB_SERVER=${DB_SERVER} --name xperience-db xperience-server-db:latest
+        '''
                     }
                 }
             }
