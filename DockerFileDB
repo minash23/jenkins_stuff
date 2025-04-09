@@ -3,10 +3,14 @@ COPY target/XPSDB.jar /XPSDB.jar
 COPY passwords.txt /passwords.txt
 # Expose port
 EXPOSE 9000
-# Define DB_SERVER argument with no default
-ARG DB_SERVER
-ENV DB_SERVER=$DB_SERVER 
-# Use ENTRYPOINT with CMD to allow for graceful handling
-ENTRYPOINT ["java", "-jar", "/XPSDB.jar", "9000"]
-# Default CMD args will be overridden if specified at runtime
-CMD ["${DB_SERVER}", "/passwords.txt"]
+# Create a startup script to handle the DB_SERVER parameter properly
+RUN echo '#!/bin/sh\n\
+if [ -z "$DB_SERVER" ]; then\n\
+  echo "Error: DB_SERVER environment variable is not set"\n\
+  exit 1\n\
+fi\n\
+java -jar /XPSDB.jar 9000 "$DB_SERVER" /passwords.txt\n' > /startup.sh && \
+    chmod +x /startup.sh
+
+# Use the startup script as the entrypoint
+ENTRYPOINT ["/startup.sh"]
