@@ -3,10 +3,11 @@ pipeline {
     
     environment {
         MAVEN_OPTS = "-Dmaven.repo.local=/home/minashehata/.m2/repository"
-        DB_SERVER = "10.0.2.17"
+        DB_SERVER = "10.0.2.17" 
     }
     
     stages {
+        stage('Checkout') {
             steps {
                 checkout scm
             }
