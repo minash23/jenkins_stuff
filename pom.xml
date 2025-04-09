@@ -48,54 +48,7 @@
                     <includes>
                         <include>**/*Test.java</include>
                     </includes>
-                    <!-- Fail the build if there are test failures -->
-                    <testFailureIgnore>false</testFailureIgnore>
                 </configuration>
-            </plugin>
-            
-            <!-- Maven Antrun Plugin to rename MySQL connector -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <version>3.1.0</version>
-                <executions>
-                    <execution>
-                        <id>copy-mysql-connector</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                        <configuration>
-                            <target>
-                                <copy file="${settings.localRepository}/mysql/mysql-connector-java/${mysql.connector.version}/mysql-connector-java-${mysql.connector.version}.jar"
-                                      tofile="${project.build.directory}/mysql-connector.jar" />
-                            </target>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            
-            <!-- Maven Jar Plugin for DonaBase.jar -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>3.3.0</version>
-                <executions>
-                    <execution>
-                        <id>donabase-jar</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                        <configuration>
-                            <finalName>DonaBase</finalName>
-                            <classifier>donabase</classifier>
-                            <includes>
-                                <include>com/jeffdonahoo/donabase/**</include>
-                            </includes>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
             
             <!-- Maven Shade Plugin for creating executable JARs -->
