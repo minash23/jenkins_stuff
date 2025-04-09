@@ -3,6 +3,7 @@ pipeline {
     
     environment {
         MAVEN_OPTS = "-Dmaven.repo.local=/home/minashehata/.m2/repository"
+        DB_SERVER = "10.0.2.17"
     }
     
     stages {
@@ -30,24 +31,48 @@ pipeline {
             }
         }
         
-        stage('Build Docker Image') {
-            steps {
-                sh 'docker build -t xperience-server:latest .'
+        stage('Build Docker Images') {
+            parallel {
+                stage('Build Memory Image') {
+                    steps {
+                        sh 'docker build -t xperience-server-memory:latest -f DockerFileMemory .'
+                    }
+                }
+                stage('Build DB Image') {
+                    steps {
+                        sh 'docker build -t xperience-server-db:latest -f DockerFileDB --build-arg DB_SERVER=${DB_SERVER} .'
+                    }
+                }
             }
         }
         
-        stage('Deploy') {
-            steps {
-                sh 'docker stop xperience-server || true'
-                sh 'docker rm xperience-server || true'
-                sh 'docker run -d -p 8000:8000 --name xperience-server xperience-server:latest'
+        stage('Deploy Containers') {
+            parallel {
+                stage('Deploy Memory Container') {
+                    steps {
+                        sh '''
+                            docker stop xperience-memory || true
+                            docker rm xperience-memory || true
+                            docker run -d -p 8000:8000 --name xperience-memory xperience-server-memory:latest
+                        '''
+                    }
+                }
+                stage('Deploy DB Container') {
+                    steps {
+                        sh '''
+                            docker stop xperience-db || true
+                            docker rm xperience-db || true
+                            docker run -d -p 9000:9000 --name xperience-db xperience-server-db:latest
+                        '''
+                    }
+                }
             }
         }
     }
     
     post {
         success {
-            echo 'Pipeline executed successfully!'
+            echo 'Both memory and DB containers deployed successfully!'
         }
         failure {
             echo 'Pipeline execution failed!'
