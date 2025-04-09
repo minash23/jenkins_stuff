@@ -53,28 +53,23 @@
                 </configuration>
             </plugin>
             
-            <!-- Maven Dependency Plugin to rename MySQL connector -->
+            <!-- Maven Antrun Plugin to rename MySQL connector -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <version>3.3.0</version>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.1.0</version>
                 <executions>
                     <execution>
                         <id>copy-mysql-connector</id>
                         <phase>package</phase>
                         <goals>
-                            <goal>copy</goal>
+                            <goal>run</goal>
                         </goals>
                         <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>mysql</groupId>
-                                    <artifactId>mysql-connector-java</artifactId>
-                                    <version>${mysql.connector.version}</version>
-                                    <outputDirectory>${project.build.directory}</outputDirectory>
-                                    <destFileName>mysql-connector.jar</destFileName>
-                                </artifactItem>
-                            </artifactItems>
+                            <target>
+                                <copy file="${settings.localRepository}/mysql/mysql-connector-java/${mysql.connector.version}/mysql-connector-java-${mysql.connector.version}.jar"
+                                      tofile="${project.build.directory}/mysql-connector.jar" />
+                            </target>
                         </configuration>
                     </execution>
                 </executions>
